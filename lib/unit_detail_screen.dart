@@ -1,27 +1,27 @@
 import 'package:aqua_properties/features/nav_view/unite/unite_screen.dart';
+import 'package:aqua_properties/view_booking_screen.dart';
 import 'package:flutter/material.dart';
 
 class UnitDetailScreen extends StatefulWidget {
-  final  dynamic unitIdName;
-  final  dynamic unitPrice;
-  final  dynamic unitTotalArea;
-  final  dynamic unitProjectId;
-  final  dynamic unitplanId;
-  final  dynamic unitpriceUnit;
-  final  dynamic unitdiscount;
-  final  dynamic unituserId;
-  final  dynamic unitflatArea;
-  final  dynamic unitbuildArea;
-  final  dynamic unitbalconyArea;
-  final  dynamic unittowerId;
-  final  dynamic unitfloorId;
-  final  dynamic unitfloorTypeId;
-  final  dynamic unitbedTypeId;
-  final  dynamic unitviewTypeId;
-  final  dynamic unitthemeId;
+  final dynamic unitIdName;
+  final dynamic unitPrice;
+  final dynamic unitTotalArea;
+  final dynamic unitProjectId;
+  final dynamic unitplanId;
+  final dynamic unitpriceUnit;
+  final dynamic unitdiscount;
+  final dynamic unituserId;
+  final dynamic unitflatArea;
+  final dynamic unitbuildArea;
+  final dynamic unitbalconyArea;
+  final dynamic unittowerId;
+  final dynamic unitfloorId;
+  final dynamic unitfloorTypeId;
+  final dynamic unitbedTypeId;
+  final dynamic unitviewTypeId;
+  final dynamic unitthemeId;
   final dynamic unitId;
   final dynamic unitStatus;
-
 
   // Constructor accepting data
   const UnitDetailScreen({
@@ -41,7 +41,10 @@ class UnitDetailScreen extends StatefulWidget {
     required this.unitfloorId,
     required this.unitfloorTypeId,
     required this.unitbedTypeId,
-    required this.unitviewTypeId, required this.unitthemeId, required this.unitId, required this.unitStatus,
+    required this.unitviewTypeId,
+    required this.unitthemeId,
+    required this.unitId,
+    required this.unitStatus,
   });
 
   @override
@@ -71,65 +74,97 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
           children: [
             const SizedBox(height: 20),
 
+            // Conditional Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                // Plan Button
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => UniteScreen(
-                          selectPlan: widget.unitIdName,
+                // Agar unituserId == false hai toh Plan aur Book Button dikhao
+                if (widget.unituserId == false) ...[
+                  // Plan Button
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UniteScreen(
+                            selectPlan: widget.unitIdName,
+                          ),
                         ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    child: const Text('Plan'),
                   ),
-                  child: const Text('Plan'),
-                ),
 
-                // Book Button
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BookingPage(
-                          unitId: widget.unitIdName,
+                  // Book Button
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookingPage(
+                            unitId: widget.unitIdName,
+                          ),
                         ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    child: const Text('Book'),
                   ),
-                  child: const Text('Book'),
-                ),
+                ] else ...[
+                  // Agar unituserId mein false nahi hai toh sirf View Booking Button dikhao
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ViewBookingScreen(
+                            unitId: widget.unitIdName,
+                            status: widget.unitStatus,
+                            userId: widget.unituserId,
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orangeAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('View Booking'),
+                  ),
+                ],
               ],
             ),
+
             const SizedBox(height: 5),
             const Divider(color: Colors.black),
-
 
             //  ID
             Row(
@@ -409,24 +444,6 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
             ),
             const Divider(),
             const SizedBox(height: 10),
-
-            // Image upload section
-            Center(
-              child: GestureDetector(
-                onTap: () {
-                  // Image picking logic
-                },
-                child: Container(
-                  height: 60,
-                  width: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.camera_alt, color: Colors.blue, size: 30),
-                ),
-              ),
-            ),
           ],
         ),
       ),
