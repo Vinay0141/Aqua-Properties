@@ -20,181 +20,118 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  late ScrollController _scrollController;
+  late PageController _pageController;
+  int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
+    _pageController = PageController(initialPage: widget.initialIndex);
+    _currentIndex = widget.initialIndex;
   }
 
-  void _scrollToSelectedIndex(int index) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double itemWidth = screenWidth / 4.5; // Har item ka width (4-5 items ek time par dikhne chahiye)
-    double targetScrollPosition = itemWidth * index - screenWidth / 3;
-
-    _scrollController.animateTo(
-      targetScrollPosition,
-      duration: const Duration(milliseconds: 300),
+  void _onTabSelected(BuildContext context, int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+    context.read<TabBloc>().add(TabChangedEvent(index));
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
     );
+  }
+
+  Future<bool> _onWillPop() async {
+    if (_currentIndex > 0) {
+      _onTabSelected(context, _currentIndex - 1); // ✅ Ek tab pichhe jaayega
+      return Future.value(false);
+    } else {
+      return await _showExitDialog(); // ❌ Home screen pe exit confirm kare
+    }
+  }
+
+  Future<bool> _showExitDialog() async {
+    return await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Exit App"),
+        content: const Text("Kya aap sure ho ki app close karna chahte ho?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text("Exit"),
+          ),
+        ],
+      ),
+    ) ??
+        false;
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => TabBloc()..add(TabChangedEvent(widget.initialIndex)),
-      child: Scaffold(
-        body: BlocBuilder<TabBloc, TabState>(
-          builder: (context, state) {
-            int currentIndex = widget.initialIndex;
-
+      child: WillPopScope(
+        onWillPop: _onWillPop, // 🔙 Handle back navigation
+        child: BlocListener<TabBloc, TabState>(
+          listener: (context, state) {
             if (state is TabInitialState) {
-              currentIndex = state.tabIndex;
+              _currentIndex = state.tabIndex;
+              _pageController.jumpToPage(_currentIndex); // ✅ Tab Sync Fix
             }
-
-            var unitIdName;
-            return WillPopScope(
-              onWillPop: () async {
-                if (currentIndex > 0) {
-                  context.read<TabBloc>().add(TabChangedEvent(currentIndex - 1));
-                  return Future.value(false);
-                } else {
-                  context.read<TabBloc>().add(TabChangedEvent(4));
-                  return Future.value(false);
-                }
-              },
-              child: Column(
-                children: [
-                  Expanded(
-                    child: IndexedStack(
-                      index: currentIndex,
-                      children: [
-                        const HomeScreen(),
-                        UniteScreen(selectPlan: unitIdName.toString()),
-                        BookingScreen(),
-                        const CustomerDetail(),
-                        const AgentDetail(),
-                        const AgenciesDetail(),
-                      ],
-                    ),
-                  ),
-
-                  /// ✅ Scrollable Custom Navigation Bar with Auto Scroll Animation
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                    child: Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: SingleChildScrollView(
-                        controller: _scrollController,
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildNavItem(
-                              context,
-                              icon: Icons.home_filled,
-                              label: 'Home',
-                              index: 0,
-                              currentIndex: currentIndex,
-                            ),
-                            _buildNavItem(
-                              context,
-                              icon: Icons.business,
-                              label: 'Unite',
-                              index: 1,
-                              currentIndex: currentIndex,
-                            ),
-                            _buildNavItem(
-                              context,
-                              icon: Icons.insert_page_break_sharp,
-                              label: 'Booking',
-                              index: 2,
-                              currentIndex: currentIndex,
-                            ),
-                            _buildNavItem(
-                              context,
-                              icon: Icons.people,
-                              label: 'Customers',
-                              index: 3,
-                              currentIndex: currentIndex,
-                            ),
-                            _buildNavItem(
-                              context,
-                              icon: Icons.person,
-                              label: 'Agent',
-                              index: 4,
-                              currentIndex: currentIndex,
-                            ),
-                            _buildNavItem(
-                              context,
-                              icon: Icons.business,
-                              label: 'Agencies',
-                              index: 5,
-                              currentIndex: currentIndex,
-                            ),
-                            _buildNavItem(
-                              context,
-                              icon: Icons.payment,
-                              label: 'Payment',
-                              index: 6,
-                              currentIndex: currentIndex,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
           },
-        ),
-      ),
-    );
-  }
-
-  /// ✅ Custom Nav Item Widget with Auto Scroll Trigger
-  Widget _buildNavItem(BuildContext context,
-      {required IconData icon,
-        required String label,
-        required int index,
-        required int currentIndex}) {
-    bool isSelected = index == currentIndex;
-
-    return GestureDetector(
-      onTap: () {
-        context.read<TabBloc>().add(TabChangedEvent(index));
-        _scrollToSelectedIndex(index); // Auto Scroll on Tap
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue[100] : Colors.transparent,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.blue : Colors.black,
-              size: 30,
+          child: Scaffold(
+            body: PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                const HomeScreen(),
+                const UniteScreen(selectPlan: ""),
+                BookingScreen(),
+                const CustomerDetail(),
+                const AgentDetail(),
+                const AgenciesDetail(),
+              ],
             ),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.blue : Colors.black,
-                fontSize: 12,
-              ),
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: (index) => _onTabSelected(context, index),
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: Colors.blue,
+              unselectedItemColor: Colors.black,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home_filled),
+                  label: 'Home',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.business),
+                  label: 'Unite',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.insert_page_break_sharp),
+                  label: 'Booking',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.people),
+                  label: 'Customers',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
+                  label: 'Agent',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.business),
+                  label: 'Agencies',
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
